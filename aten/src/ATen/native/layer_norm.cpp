@@ -282,14 +282,23 @@ Tensor rms_norm_symint(
     c10::ScalarType opmath_t = toOpMathType(input.scalar_type());
     Tensor upcasted_input = input.to(opmath_t);
 
-    opmath_t eps_val;
-    if (!eps.has_value()) {
-      eps_val = std::numeric_limits<at::scalar_value_type<opmath_t>::type>::epsilon();
+    Tensor rqrst_input;
+
+    // opmath_t would be one of [Double, Float, ComplexFloat, ComplexDouble]
+    if (opmath_t == at::ScalarType::Float || opmath_t == at::ScalarType::ComplexFloat) {
+      float eps_val = std::numeric_limits<float>::epsilon();
+      if (eps.has_value()) {
+        eps_val = eps.value();
+      }
+      rqrst_input = rsqrt(at::pow(upcasted_input, 2).mean(dims_to_reduce_ref, /*keepdim=*/true).add_(eps_val));
     } else {
-      eps_val = eps.value();
+      double eps_val = std::numeric_limits<double>::epsilon();
+      if (eps.has_value()) {
+        eps_val = eps.value();
+      }
+      rqrst_input = rsqrt(at::pow(upcasted_input, 2).mean(dims_to_reduce_ref, /*keepdim=*/true).add_(eps_val));
     }
 
-    auto rqrst_input = rsqrt(at::pow(upcasted_input, 2).mean(dims_to_reduce_ref, /*keepdim=*/true).add_(eps_val));
     Tensor result = upcasted_input.mul(rqrst_input).type_as(input);
 
     if (weight_opt.has_value()) {
