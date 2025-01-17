@@ -698,6 +698,7 @@ def true_noop(*args, **kwargs):
 def remove_noop_ops(graph: torch.fx.Graph):
     """
     Removes both operations that are essentially aten.clone and operations that are essentially aten.alias from the graph.
+    Also removes aten._assert_tensor_metadata.default op.
     """
     inputs = OrderedSet[torch.fx.Node]()
     input_storages = OrderedSet[Union[int, None]]()
@@ -754,6 +755,11 @@ def remove_noop_ops(graph: torch.fx.Graph):
             if same_meta(node, src) and cond(*args, **kwargs):
                 node.replace_all_uses_with(src)
                 graph.erase_node(node)
+
+    for node in graph.find_nodes(
+        op="call_function", target=torch.ops.aten._assert_tensor_metadata.default
+    ):
+        graph.erase_node(node)
 
 
 def decompose_triton_kernel_wrapper_functional(graph):
