@@ -236,6 +236,12 @@ def _get_not_module_type_or_name_filter(
 
 
 class XNNPACKQuantizer(Quantizer):
+    """
+    !!! DEPRECATED !!!
+    XNNPACKQuantizer is a marked as deprected. It will be removed in the future.
+    It has been moved to executorch.backends.xnnpack.quantizer.xnnpack_quantizer.XNNPACKQuantizer.
+    Please use the new quantizer instead.
+    """
     supported_config_and_operators = _get_supported_config_and_operators()
     STATIC_QAT_ONLY_OPS = [
         "conv_bn_relu",
